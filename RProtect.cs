@@ -7,13 +7,12 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.0")]
+    [Info("Research Protection", "RFC1920", "0.1.1")]
     class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
         private const string RPGUI2 = "blueblocker.gui2";
         private Dictionary<uint, ulong> rsloot = new Dictionary<uint, ulong>();
-        private Dictionary<uint, CuiLabel> rslabel = new Dictionary<uint, CuiLabel>();
         private List<ulong> canres = new List<ulong>();
 
         #region Message
@@ -65,7 +64,6 @@ namespace Oxide.Plugins
         {
             var rst = container.GetComponentInParent<ResearchTable>() ?? null;
             if(rst == null) return null;
-
             if(rsloot.ContainsKey(rst.net.ID)) return null;
 
             rsloot.Add(rst.net.ID, player.userID);
@@ -99,18 +97,16 @@ namespace Oxide.Plugins
                 label = Lang("proton");
                 uicolor = "#dddddd";
             }
-            string lname = "label" + rst.ToString();
-            UI.Label(ref container, RPGUI, UI.Color(uicolor, 1f), label, 12, "0 0", "1 1", lname);
+            UI.Label(ref container, RPGUI, UI.Color(uicolor, 1f), label, 12, "0 0", "1 1");
 
             CuiHelper.AddUi(player, container);
 
             if (canres.Contains(player.userID))
             {
-                CuiElementContainer cont2 = UI.Container(RPGUI2, UI.Color("ff4444", 1f), "0.66 0.163", "0.765 0.205", true, "Overlay");
-                UI.Label(ref cont2, RPGUI2, UI.Color("#ffffff", 1f), Lang("override"), 12, "0 0", "1 1", "none");
+                CuiElementContainer cont2 = UI.Container(RPGUI2, UI.Color("ff4444", 1f), "0.657 0.163", "0.765 0.205", true, "Overlay");
+                UI.Label(ref cont2, RPGUI2, UI.Color("#ffffff", 1f), Lang("override"), 12, "0 0", "1 1");
                 CuiHelper.AddUi(player, cont2);
             }
-
         }
 
         #region Classes
@@ -133,14 +129,14 @@ namespace Oxide.Plugins
                 };
                 return container;
             }
-            public static void Label(ref CuiElementContainer container, string panel, string color, string text, int size, string min, string max, string labelname, TextAnchor align = TextAnchor.MiddleCenter)
+            public static void Label(ref CuiElementContainer container, string panel, string color, string text, int size, string min, string max, TextAnchor align = TextAnchor.MiddleCenter)
             {
                 container.Add(new CuiLabel
                 {
                     Text = { Color = color, FontSize = size, Align = align, Text = text },
                     RectTransform = { AnchorMin = min, AnchorMax = max }
                 },
-                panel, labelname);
+                panel);
             }
             public static string Color(string hexColor, float alpha)
             {
