@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.1")]
+    [Info("Research Protection", "RFC1920", "0.1.2")]
     class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
@@ -60,9 +60,8 @@ namespace Oxide.Plugins
             }
         }
 
-        private object CanLootEntity(BasePlayer player, StorageContainer container)
+        private object CanLootEntity(BasePlayer player, ResearchTable rst)
         {
-            var rst = container.GetComponentInParent<ResearchTable>() ?? null;
             if(rst == null) return null;
             if(rsloot.ContainsKey(rst.net.ID)) return null;
 
@@ -74,14 +73,18 @@ namespace Oxide.Plugins
 
         void OnLootEntityEnd(BasePlayer player, BaseCombatEntity entity)
         {
-            if(!rsloot.ContainsKey(entity.net.ID)) return;
-            if(entity == null) return;
+            ulong networkID;
+            if (entity == null || !rsloot.TryGetValue(entity.net.ID, out networkID))
+            {
+                return;
+            }
 
-            if(rsloot[entity.net.ID] == player.userID)
+            if (networkID == player.userID)
             {
                 CuiHelper.DestroyUi(player, RPGUI);
                 CuiHelper.DestroyUi(player, RPGUI2);
                 rsloot.Remove(entity.net.ID);
+                canres.Remove(player.userID);
             }
         }
 
