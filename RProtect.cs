@@ -1,3 +1,4 @@
+﻿//#define DEBUG
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -7,12 +8,13 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.2")]
+    [Info("Research Protection", "RFC1920", "0.1.3")]
     class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
         private const string RPGUI2 = "blueblocker.gui2";
         private Dictionary<uint, ulong> rsloot = new Dictionary<uint, ulong>();
+        private Dictionary<ulong, Timer> rstimer = new Dictionary<ulong, Timer>();
         private List<ulong> canres = new List<ulong>();
 
         #region Message
@@ -43,7 +45,7 @@ namespace Oxide.Plugins
                     var rst = rsloot.FirstOrDefault(x => x.Value == player.userID).Key;
                     canres.Add(player.userID);
                     RsGUI(player, rst, Lang("alldone"));
-                    timer.Once(3f, () => RsGUI(player, rst));
+                    timer.Once(3f, () => RsGUI(player, rst, null, player.inventory.loot.IsLooting()));
                     timer.Once(3f, () => canres.Remove(player.userID));
                 }
                 return false;
@@ -66,13 +68,40 @@ namespace Oxide.Plugins
             if(rsloot.ContainsKey(rst.net.ID)) return null;
 
             rsloot.Add(rst.net.ID, player.userID);
-            RsGUI(player, rst.net.ID);
+
+            if (!rstimer.ContainsKey(player.userID))
+            {
+#if DEBUG
+                Puts($"Creating CheckLooting timer for {player.displayName}");
+#endif
+                rstimer.Add(player.userID, timer.Every(0.5f, () => CheckLooting(player)));
+                RsGUI(player, rst.net.ID);
+            }
 
             return null;
         }
 
+        void CheckLooting(BasePlayer player)
+        {
+#if DEBUG
+            Puts($"Running CheckLooting for {player.displayName}");
+#endif
+            if (!player.inventory.loot.IsLooting())
+            {
+#if DEBUG
+                Puts("Not looting.  Killing GUI and CheckLooting timer...");
+#endif
+                CuiHelper.DestroyUi(player, RPGUI);
+                CuiHelper.DestroyUi(player, RPGUI2);
+                player.EndLooting();
+                rstimer[player.userID].Destroy();
+                rstimer.Remove(player.userID);
+            }
+        }
+
         void OnLootEntityEnd(BasePlayer player, BaseCombatEntity entity)
         {
+            // This setup is causing occaisional continuance of the GUI when looting the RT has ended...
             ulong networkID;
             if (entity == null || !rsloot.TryGetValue(entity.net.ID, out networkID))
             {
@@ -88,12 +117,13 @@ namespace Oxide.Plugins
             }
         }
 
-        void RsGUI(BasePlayer player, uint rst, string label = null)
+        void RsGUI(BasePlayer player, uint rst, string label = null, bool looting = true)
         {
+            if (!looting) return;
             CuiHelper.DestroyUi(player, RPGUI);
             CuiHelper.DestroyUi(player, RPGUI2);
 
-            CuiElementContainer container = UI.Container(RPGUI, UI.Color("444444", 1f), "0.77 0.798", "0.9465 0.835", true, "Overlay");
+            CuiElementContainer container = UI.Container(RPGUI, UI.Color("444444", 1f), "0.77 0.798", "0.9465 0.835", false, "Overlay");
             string uicolor = "#ff3333";
             if(label == null)
             {
@@ -106,7 +136,7 @@ namespace Oxide.Plugins
 
             if (canres.Contains(player.userID))
             {
-                CuiElementContainer cont2 = UI.Container(RPGUI2, UI.Color("ff4444", 1f), "0.657 0.163", "0.765 0.205", true, "Overlay");
+                CuiElementContainer cont2 = UI.Container(RPGUI2, UI.Color("ff4444", 1f), "0.657 0.163", "0.765 0.205", false, "Overlay");
                 UI.Label(ref cont2, RPGUI2, UI.Color("#ffffff", 1f), Lang("override"), 12, "0 0", "1 1");
                 CuiHelper.AddUi(player, cont2);
             }
