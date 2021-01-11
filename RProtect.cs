@@ -1,4 +1,26 @@
-﻿//#define DEBUG
+#region License (GPL v3)
+/*
+    DESCRIPTION
+    Copyright (c) 2020 RFC1920 <desolationoutpostpve@gmail.com>
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+    Optionally you can also view the license at <http://www.gnu.org/licenses/>.
+*/
+#endregion License Information (GPL v3)
+//#define DEBUG
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -8,7 +30,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.3")]
+    [Info("Research Protection", "RFC1920", "0.1.4")]
     class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
@@ -22,7 +44,7 @@ namespace Oxide.Plugins
         private void Message(IPlayer player, string key, params object[] args) => player.Message(Lang(key, player.Id, args));
         #endregion
 
-        void Init()
+        protected override void LoadDefaultMessages()
         {
             lang.RegisterMessages(new Dictionary<string, string>
             {
@@ -123,7 +145,7 @@ namespace Oxide.Plugins
             CuiHelper.DestroyUi(player, RPGUI);
             CuiHelper.DestroyUi(player, RPGUI2);
 
-            CuiElementContainer container = UI.Container(RPGUI, UI.Color("444444", 1f), "0.77 0.798", "0.9465 0.835", false, "Overlay");
+            CuiElementContainer container = UI.Container(RPGUI, UI.Color("FFF5E1", 0.16f), "0.77 0.798", "0.9465 0.835", false, "Overlay");
             string uicolor = "#ff3333";
             if(label == null)
             {
