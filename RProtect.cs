@@ -30,8 +30,8 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.4")]
-    class RProtect : RustPlugin
+    [Info("Research Protection", "RFC1920", "0.1.5")]
+    internal class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
         private const string RPGUI2 = "blueblocker.gui2";
@@ -58,7 +58,7 @@ namespace Oxide.Plugins
         {
             if (player == null) return null;
             if (item == null) return null;
-            if(player.blueprints.HasUnlocked(item.info))
+            if (player.blueprints.HasUnlocked(item.info))
             {
                 if (canres.Contains(player.userID)) return null;
 
@@ -75,9 +75,9 @@ namespace Oxide.Plugins
             return null;
         }
 
-        void Unload()
+        private void Unload()
         {
-            foreach(BasePlayer player in BasePlayer.activePlayerList)
+            foreach (BasePlayer player in BasePlayer.activePlayerList)
             {
                 CuiHelper.DestroyUi(player, RPGUI);
                 CuiHelper.DestroyUi(player, RPGUI2);
@@ -86,8 +86,8 @@ namespace Oxide.Plugins
 
         private object CanLootEntity(BasePlayer player, ResearchTable rst)
         {
-            if(rst == null) return null;
-            if(rsloot.ContainsKey(rst.net.ID)) return null;
+            if (rst == null) return null;
+            if (rsloot.ContainsKey(rst.net.ID)) return null;
 
             rsloot.Add(rst.net.ID, player.userID);
 
@@ -103,7 +103,7 @@ namespace Oxide.Plugins
             return null;
         }
 
-        void CheckLooting(BasePlayer player)
+        private void CheckLooting(BasePlayer player)
         {
 #if DEBUG
             Puts($"Running CheckLooting for {player.displayName}");
@@ -121,8 +121,10 @@ namespace Oxide.Plugins
             }
         }
 
-        void OnLootEntityEnd(BasePlayer player, BaseCombatEntity entity)
+        private void OnLootEntityEnd(BasePlayer player, BaseCombatEntity entity)
         {
+            if (player == null) return;
+            if (!(entity is ResearchTable)) return;
             // This setup is causing occaisional continuance of the GUI when looting the RT has ended...
             ulong networkID;
             if (entity == null || !rsloot.TryGetValue(entity.net.ID, out networkID))
@@ -134,12 +136,19 @@ namespace Oxide.Plugins
             {
                 CuiHelper.DestroyUi(player, RPGUI);
                 CuiHelper.DestroyUi(player, RPGUI2);
-                rsloot.Remove(entity.net.ID);
-                canres.Remove(player.userID);
+
+                if (rsloot.ContainsKey(entity.net.ID))
+                {
+                    rsloot.Remove(entity.net.ID);
+                }
+                if (canres.Contains(player.userID))
+                {
+                    canres.Remove(player.userID);
+                }
             }
         }
 
-        void RsGUI(BasePlayer player, uint rst, string label = null, bool looting = true)
+        private void RsGUI(BasePlayer player, uint rst, string label = null, bool looting = true)
         {
             if (!looting) return;
             CuiHelper.DestroyUi(player, RPGUI);
@@ -147,7 +156,7 @@ namespace Oxide.Plugins
 
             CuiElementContainer container = UI.Container(RPGUI, UI.Color("FFF5E1", 0.16f), "0.77 0.798", "0.9465 0.835", false, "Overlay");
             string uicolor = "#ff3333";
-            if(label == null)
+            if (label == null)
             {
                 label = Lang("proton");
                 uicolor = "#dddddd";
@@ -169,7 +178,7 @@ namespace Oxide.Plugins
         {
             public static CuiElementContainer Container(string panel, string color, string min, string max, bool useCursor = false, string parent = "Overlay")
             {
-                CuiElementContainer container = new CuiElementContainer()
+                return new CuiElementContainer()
                 {
                     {
                         new CuiPanel
@@ -182,8 +191,8 @@ namespace Oxide.Plugins
                         panel
                     }
                 };
-                return container;
             }
+
             public static void Label(ref CuiElementContainer container, string panel, string color, string text, int size, string min, string max, TextAnchor align = TextAnchor.MiddleCenter)
             {
                 container.Add(new CuiLabel
@@ -193,9 +202,10 @@ namespace Oxide.Plugins
                 },
                 panel);
             }
+
             public static string Color(string hexColor, float alpha)
             {
-                if(hexColor.StartsWith("#"))
+                if (hexColor.StartsWith("#"))
                 {
                     hexColor = hexColor.Substring(1);
                 }
