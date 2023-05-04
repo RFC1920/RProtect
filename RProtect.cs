@@ -30,7 +30,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Research Protection", "RFC1920", "0.1.5")]
+    [Info("Research Protection", "RFC1920", "0.1.6")]
     internal class RProtect : RustPlugin
     {
         private const string RPGUI = "blueblocker.gui";
@@ -64,7 +64,7 @@ namespace Oxide.Plugins
 
                 if (rsloot.ContainsValue(player.userID))
                 {
-                    var rst = rsloot.FirstOrDefault(x => x.Value == player.userID).Key;
+                    uint rst = rsloot.FirstOrDefault(x => x.Value == player.userID).Key;
                     canres.Add(player.userID);
                     RsGUI(player, rst, Lang("alldone"));
                     timer.Once(3f, () => RsGUI(player, rst, null, player.inventory.loot.IsLooting()));
@@ -87,9 +87,9 @@ namespace Oxide.Plugins
         private object CanLootEntity(BasePlayer player, ResearchTable rst)
         {
             if (rst == null) return null;
-            if (rsloot.ContainsKey(rst.net.ID)) return null;
+            if (rsloot.ContainsKey((uint)rst.net.ID.Value)) return null;
 
-            rsloot.Add(rst.net.ID, player.userID);
+            rsloot.Add((uint)rst.net.ID.Value, player.userID);
 
             if (!rstimer.ContainsKey(player.userID))
             {
@@ -97,7 +97,7 @@ namespace Oxide.Plugins
                 Puts($"Creating CheckLooting timer for {player.displayName}");
 #endif
                 rstimer.Add(player.userID, timer.Every(0.5f, () => CheckLooting(player)));
-                RsGUI(player, rst.net.ID);
+                RsGUI(player, (uint)rst.net.ID.Value);
             }
 
             return null;
@@ -127,7 +127,7 @@ namespace Oxide.Plugins
             if (!(entity is ResearchTable)) return;
             // This setup is causing occaisional continuance of the GUI when looting the RT has ended...
             ulong networkID;
-            if (entity == null || !rsloot.TryGetValue(entity.net.ID, out networkID))
+            if (entity == null || !rsloot.TryGetValue((uint)entity.net.ID.Value, out networkID))
             {
                 return;
             }
@@ -137,9 +137,9 @@ namespace Oxide.Plugins
                 CuiHelper.DestroyUi(player, RPGUI);
                 CuiHelper.DestroyUi(player, RPGUI2);
 
-                if (rsloot.ContainsKey(entity.net.ID))
+                if (rsloot.ContainsKey((uint)entity.net.ID.Value))
                 {
-                    rsloot.Remove(entity.net.ID);
+                    rsloot.Remove((uint)entity.net.ID.Value);
                 }
                 if (canres.Contains(player.userID))
                 {
